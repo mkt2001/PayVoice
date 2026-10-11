@@ -1,0 +1,40 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#F5F8FF" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="22dp">
+        <ImageView android:layout_width="92dp" android:layout_height="92dp"
+            android:layout_gravity="center_horizontal" android:src="@drawable/payvoice_logo"
+            android:contentDescription="Payvoice logo" android:scaleType="fitCenter" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Payvoice" android:textColor="#18264A" android:textSize="30sp"
+            android:textStyle="bold" android:gravity="center" android:layout_marginTop="8dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Payment Voice Assistant" android:textColor="#687796" android:textSize="14sp"
+            android:gravity="center" android:layout_marginBottom="22dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="अपना घोषणा संदेश लिखें" android:textColor="#18264A" android:textSize="18sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="{app} और {amount} को संदेश में इस्तेमाल करें। उदाहरण: {app} पर {amount} प्राप्त हुए। धन्यवाद!"
+            android:textColor="#687796" android:textSize="13sp" android:layout_marginTop="5dp" />
+        <EditText android:id="@+id/messageInput" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minLines="3" android:gravity="top|start" android:inputType="textMultiLine|textCapSentences"
+            android:hint="{app} पर {amount} प्राप्त हुए। धन्यवाद!" android:padding="14dp"
+            android:backgroundTint="#536DFF" android:layout_marginTop="10dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="बोलने की गति" android:textColor="#18264A" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="18dp" />
+        <TextView android:id="@+id/speedLabel" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="धीमी (0.75x)" android:textColor="#536DFF" />
+        <SeekBar android:id="@+id/speedSeek" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:max="10" android:progress="3" />
+        <Button android:id="@+id/saveButton" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="सेटिंग सेव करें" android:textAllCaps="false" android:backgroundTint="#536DFF" android:layout_marginTop="12dp" />
+        <Button android:id="@+id/testButton" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="आवाज़ टेस्ट करें" android:textAllCaps="false" android:backgroundTint="#7A42E8" />
+        <Button android:id="@+id/accessButton" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Notification Access चालू करें" android:textAllCaps="false" android:backgroundTint="#149E89" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="नोट: यह ऐप नोटिफिकेशन पढ़ता है, बैंक बैलेंस सत्यापित नहीं करता। केवल भरोसेमंद ऐप्स की सूचनाएँ चालू रखें।"
+            android:textColor="#687796" android:textSize="12sp" android:layout_marginTop="18dp" />
+    </LinearLayout>
+</ScrollView>
