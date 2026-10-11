@@ -1,3 +1,4 @@
+
 name: Build Payvoice APK
 
 on:
@@ -35,6 +36,7 @@ jobs:
         run: |
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
           echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
           echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
 
@@ -57,21 +59,63 @@ jobs:
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
           echo "Project found: $PROJECT_DIR"
 
-      - name: Fix Java and Kotlin targets
+      - name: Configure Java and Kotlin targets
+        env:
+          PROJECT_DIR: ${{ steps.project.outputs.dir }}
         run: |
           python3 <<'PY'
+          import os
           from pathlib import Path
 
-          root = Path("extracted")
-          files = list(root.rglob("build.gradle")) + list(root.rglob("build.gradle.kts"))
+          root = Path(os.environ["PROJECT_DIR"])
+          app = root / "app"
+          candidates = [
+              app / "build.gradle",
+              app / "build.gradle.kts"
+          ]
+          p = next((x for x in candidates if x.exists()), None)
 
-          for p in files:
-              s = p.read_text()
-              s = s.replace("VERSION_1_8", "VERSION_17")
-              s = s.replace('jvmTarget = "1.8"', 'jvmTarget = "17"')
-              s = s.replace("jvmTarget = '1.8'", "jvmTarget = '17'")
-              p.write_text(s)
-              print("Checked:", p)
+          if p is None:
+              raise SystemExit("ERROR: app/build.gradle not found")
+
+          if p.suffix == ".kts":
+              raise SystemExit(
+                  "Kotlin DSL detected. This workflow needs a Kotlin DSL-specific configuration."
+              )
+
+          s = p.read_text()
+          s = s.replace(
+              "JavaVersion.VERSION_1_8",
+              "JavaVersion.VERSION_17"
+          )
+          s = s.replace(
+              'jvmTarget = "1.8"',
+              'jvmTarget = "17"'
+          )
+          s = s.replace(
+              "jvmTarget = '1.8'",
+              'jvmTarget = "17"'
+          )
+
+          s += """
+
+          // PayVoice: align Java and Kotlin bytecode targets.
+          android {
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          """
+
+          p.write_text(s)
+          print("Updated:", p)
           PY
 
       - name: Build debug APK
