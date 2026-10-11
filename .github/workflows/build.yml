@@ -3,8 +3,7 @@ name: Build Payvoice APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
@@ -13,8 +12,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
     steps:
-      - name: Checkout source code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -28,55 +31,46 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Locate Android SDK
+        run: |
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager 2>/dev/null | head -n 1)
+          if [ -z "$SDKMANAGER" ]; then
+            echo "sdkmanager not found in preinstalled SDK"
+            exit 1
+          fi
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          "$SDKMANAGER" --version
 
       - name: Install Android packages
         run: |
-          sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Extract Payvoice project
+      - name: Extract project ZIP
         run: |
+          test -f Payvoice_GitHub_Project.zip
           mkdir -p extracted
           unzip -o Payvoice_GitHub_Project.zip -d extracted
-          echo "Project files:"
-          find extracted -type f | head -100
 
       - name: Find Android project
         id: project
         run: |
           SETTINGS=$(find extracted -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)
           if [ -z "$SETTINGS" ]; then
-            echo "ERROR: settings.gradle not found in ZIP"
+            echo "settings.gradle not found"
+            find extracted -maxdepth 4 -type f
             exit 1
           fi
           PROJECT_DIR=$(dirname "$SETTINGS")
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Android project: $PROJECT_DIR"
+          echo "Project found: $PROJECT_DIR"
 
-      - name: Align Java and Kotlin targets
+      - name: Build APK
         run: |
-          python3 - "${{ steps.project.outputs.dir }}/app/build.gradle" <<'PY'
-          import sys
-          from pathlib import Path
-
-          p = Path(sys.argv[1])
-          if not p.exists():
-              print("app/build.gradle not found; leaving configuration unchanged")
-              sys.exit(0)
-
-          s = p.read_text()
-          s = s.replace("JavaVersion.VERSION_1_8", "JavaVersion.VERSION_17")
-          s = s.replace('jvmTarget = "1.8"', 'jvmTarget = "17"')
-          s = s.replace("jvmTarget = '1.8'", "jvmTarget = '17'")
-          p.write_text(s)
-          print("Checked:", p)
-          PY
-
-      - name: Build debug APK
-        run: |
-          gradle --no-daemon -p "${{ steps.project.outputs.dir }}" assembleDebug
+          PROJECT_DIR="${{ steps.project.outputs.dir }}"
+          gradle --no-daemon -p "$PROJECT_DIR" assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
